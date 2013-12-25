@@ -1,90 +1,91 @@
+class Node
+
+end
+
 class Searcher
   attr_reader :map
-  attr_accessor :terrain, :start, :goal
+  attr_accessor :terrain, :start, :goal, :graph
 
   def initialize
     @map = []
     @path = []
+    @counter = 0
   end
 
-  def load(file)
-    file = File.open(file, "r") do |f|
-      f.read
-    end
-
-    file.each_line do |line|
-      row = []
-      line.scan(/[@*.^~X]/) do |r|
-        case r
-        when /[@.X]/
-          row << 1
-        when /\*/
-          row << 2
-        when /\^/
-          row << 3
-        else
-          row << 0
-        end
-      end
-      startX = line.index('@')
-      endX = line.index('X')
-      @start = [@map.length, startX] if startX
-      @goal = [@map.length, endX] if endX
-      @map << row
-    end
-  end
-
-  def import_rules(rules)
-    @terrain = Hash.new
-    arr = rules.split(', ')
-    arr.each do |r|
-      vals = r.split('=')
-      @terrain[vals[0]] = vals[1]
-    end
-    @terrain
-  end
-
-  def print_map
-    @map.each do |map_line|
-      map_line.each do |e|
-        print "#{e} "
-      end
-      print "\n"
-    end
-  end
-
-  def dfs(pos = @start)
-    mark(pos)
-    adjs = adjacents(pos)
-    puts adjs.count
-    adjs.each do |a|
-      puts @map[a[1], a[0]] if @map[a[1], a[0]]
-    end
-  end
-
-  def adjacents(pos)
-    res = []
-    res << [pos[0] - 1, pos[1]] # Up
-    res << [pos[0] - 1, pos[1] + 1] # 
-    res << [pos[0], pos[1] + 1]
-    res << [pos[0] + 1, pos[1] + 1]
-    res << [pos[0] + 1, pos[1]]
-    res << [pos[0] - 1, pos[1] - 1]
-    res << [pos[0], pos[1] - 1]
-    res << [pos[0] - 1, pos[1] - 1]
-    # puts res
-    # res.each do |re|
-    #   puts "#{re[0]}, #{re[1]}\n"
-    # end
+  def load_graph(graph)
+    @graph = graph
   end
 
   def mark(pos)
     @map[pos[0]][pos[1]] = '#'
   end
+
+  def load_labels(*labels)
+    @labels = *labels
+  end
+
+  def dfs(vertex = 0)
+    print "#{@labels[vertex]} - "
+    # Mark vertex as 0
+    edge = 0
+    while edge < @graph.length
+      @graph[vertex][edge] = 0
+      edge += 1
+    end
+
+    # Look at each edge and call DFS
+    edge = 0
+    while edge < @graph.length
+      if (@graph[edge][vertex] != 0 && edge != vertex)
+        dfs(edge)
+      end
+      edge += 1
+    end
+  end
+
+  def bfs(vertex = 0)
+    relations = {}
+    queue = [vertex]
+    while queue.length > 0
+      puts "hi"
+      v = queue.pop
+      # Mark as visited
+      edge = 0
+      while edge < @graph.length
+        @graph[v][edge] = 0
+        edge += 1
+      end
+
+      edge = 0
+      while edge < @graph.length
+        if (@graph[edge][v] != 0 && edge != v)
+          relations[edge] = v
+          return print_path(relations, edge) if edge == @labels.index(@goal)
+          queue.push edge
+        end
+        edge += 1
+      end
+    end
+  end
+
+  def print_path(relations, edge)
+    print "#{@labels[edge]} - "
+    if (relations[edge])
+      print_path(relations, relations[edge])
+    end
+  end
 end
 
 s = Searcher.new
-s.load('simple_small_map.txt')
-s.dfs
-# s.print_map
-# puts s.import_rules "~=0, .=1, *=2, ^=3, @=user, X=goal"
+G = [0,1,1,0,0,1,1],
+    [1,0,0,0,0,0,0],
+    [1,0,0,0,0,0,0],
+    [0,0,0,0,1,1,0],
+    [0,0,0,1,0,1,1],
+    [1,0,0,1,1,0,0],
+    [1,0,0,0,1,0,0]
+s.load_graph(G)
+s.load_labels("A", "B", "C", "D", "E", "F", "G")
+s.goal = "E"
+# s.dfs(0)
+puts s.bfs
